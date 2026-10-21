@@ -1,0 +1,135 @@
+AzerothHud {
+    position: absolute; width: 100%; height: 100%; pointer-events: none;
+    color: #e7dfce; font-family: "Friz Quadrata TT"; // the client's interface font, loaded by the mount
+    .hint { font-size: 12px; color: #d8cfba; }
+    .arrival { position: absolute; width: 100%; height: 100%; background-color: #0b1422; align-items: center; justify-content: center; flex-direction: column; }
+    // The explorer's menu (F9): a dark panel in the client's colours, tabs on the left, cards on the right.
+    .veil { width: 100%; height: 100%; background-color: #050b13cc; align-items: center; justify-content: center; pointer-events: all; }
+    .atlas { width: 1180px; height: 82%; padding: 24px 28px; background-color: #0e1620f2; border: 2px solid #8a6d35; border-radius: 4px; flex-direction: column; }
+    .atlas .header { flex-direction: row; align-items: flex-start; flex-shrink: 0; padding-bottom: 14px; border-bottom: 1px solid #8a6d3566; }
+    .atlas .titles { flex-direction: column; flex-grow: 1; }
+    .atlas .brand { font-size: 11px; letter-spacing: 3px; color: #c9a95c; }
+    .atlas .heading { font-family: Morpheus; font-size: 32px; color: #ffd100; margin-top: 6px; text-shadow: 1px 1px 0 black; }
+    .atlas .close { width: 36px; height: 36px; justify-content: center; align-items: center; font-size: 18px; color: #ffd100; border: 1px solid #8a6d35; border-radius: 3px; cursor: pointer; }
+    .atlas .close:hover { background-color: #8a6d3566; color: white; }
+    .atlas .body { flex-direction: row; flex-grow: 1; min-height: 0; margin-top: 16px; }
+    .atlas .tabs { flex-direction: column; width: 190px; flex-shrink: 0; margin-right: 20px; }
+    .atlas .tab { padding: 12px 16px; margin-bottom: 6px; font-size: 15px; color: #ffd100; background-color: #1c1710; border: 1px solid #4a3c22; border-radius: 3px; cursor: pointer; text-shadow: 1px 1px 0 black; }
+    .atlas .tab:hover { background-color: #2e2516; }
+    .atlas .tab.selected { background-color: #4a3c22; border-color: #c9a95c; color: white; }
+    .atlas .content { flex-direction: column; flex-grow: 1; min-width: 0; overflow-y: scroll; padding-right: 8px; }
+    .atlas .section { font-size: 14px; color: #ffd100; margin: 6px 0 8px 0; flex-shrink: 0; text-shadow: 1px 1px 0 black; }
+    .atlas .grid { flex-direction: row; flex-wrap: wrap; flex-shrink: 0; margin-bottom: 14px; }
+    .atlas .card { width: 31.5%; min-height: 54px; margin: 0 1.5% 8px 0; padding: 10px 14px; flex-direction: column; justify-content: center; font-size: 14px; color: white;
+        background-color: #1a2532; border: 1px solid #2f4154; border-radius: 3px; cursor: pointer; flex-shrink: 0; text-shadow: 1px 1px 0 black; }
+    .atlas .card.small { width: 23%; min-height: 40px; padding: 8px 12px; font-size: 12px; }
+    .atlas .card:hover { background-color: #26384b; border-color: #8a6d35; }
+    .atlas .card.selected { border-color: #ffd100; background-color: #2e2a1c; }
+    .atlas .card.tiny { width: 18%; min-height: 30px; padding: 6px 10px; font-size: 11px; }
+    .atlas .card .name { font-size: 12px; }
+    .atlas .actions .section { flex-grow: 1; margin: 0; align-self: center; }
+    .atlas .button.more { align-self: center; margin: 4px 0 14px 0; }
+    .atlas .card .caption { margin-top: 4px; font-size: 11px; color: #9eabb9; }
+    .atlas .actions { flex-direction: row; flex-shrink: 0; margin-bottom: 10px; }
+    .atlas .button { padding: 10px 18px; margin-right: 10px; font-size: 14px; color: #ffd100; background-color: #5a1a12; border: 1px solid #a3772c; border-radius: 3px; cursor: pointer; flex-shrink: 0; text-shadow: 1px 1px 0 black; }
+    .atlas .button:hover { background-color: #7a2418; color: white; }
+    .atlas .button.selected { border-color: #ffd100; color: white; }
+    .atlas .search { flex-shrink: 0; margin: 0 0 10px 0; }
+    .atlas .error { color: #ff7060; font-size: 12px; margin-top: 8px; flex-shrink: 0; }
+    .atlas .footer { flex-direction: row; align-items: center; flex-shrink: 0; margin-top: 14px; padding-top: 14px; border-top: 1px solid #8a6d3566; }
+    .atlas .controls { font-size: 12px; color: #bfb49c; margin-left: 8px; }
+}
+
+.arrival.screen { background-size: cover; background-position: center; justify-content: flex-end; }
+/* Forever's leather book: picture 16:9 above the stitched band, side panels fading into the leather. */
+.arrival.framed { background-repeat: repeat; background-size: 668px 650px; justify-content: flex-end; }
+.arrival .book { position: absolute; left: 0; right: 0; top: 0; bottom: 15%; justify-content: center; }
+.arrival .book .picture { position: relative; height: 100%; aspect-ratio: 1.777; background-size: cover; background-position: center; flex-shrink: 0; }
+.arrival .book .side { position: absolute; top: 0; bottom: 0; width: 50%; background-size: auto 100%; }
+.arrival .book .side.left { left: 0; background-position: right center; }
+.arrival .book .side.right { right: 0; background-position: left center; }
+.arrival .bookend { position: absolute; top: 0; bottom: 0; width: 28px; background-size: 100% 100%; }
+.arrival .bookend.left { left: -14px; }
+.arrival .bookend.right { right: -14px; transform: scaleX(-1); }
+.arrival .band { position: absolute; left: 0; right: 0; bottom: 0; height: 15%; background-repeat: repeat-x; background-size: auto 100%; }
+.arrival .loading-logo { position: absolute; left: 3%; top: 3%; width: 342px; height: 178px; background-size: contain; background-repeat: no-repeat; }
+.arrival.framed .progress-area { position: absolute; bottom: 4%; left: 20%; right: 20%; width: auto; margin: 0; background-color: transparent; }
+.arrival .progress-area { width: 60%; margin-bottom: 6%; align-self: center; flex-direction: column; align-items: center; gap: 6px; background-color: rgba(0,0,0,0.45); padding: 10px 16px; border-radius: 3px; }
+.arrival .bar { width: 100%; height: 14px; background-color: #1a140c; border: 1px solid #8a6d35; border-radius: 2px; }
+.arrival .bar .fill { height: 100%; background-color: #c08a2b; }
+.zone-banner { position: absolute; top: 18%; left: 0; right: 0; flex-direction: column; align-items: center; pointer-events: none; }
+/* ZoneTextFont / SubZoneTextFont of the client: Friz Quadrata 32 / 26, thick outline, (1, 0.93, 0.76). */
+.zone-banner .zone { font-size: 32px; color: #ffedc2; text-stroke-width: 4px; text-stroke-color: black; }
+.zone-banner .subzone { font-size: 26px; color: #ffedc2; text-stroke-width: 4px; text-stroke-color: black; margin-top: 4px; }
+
+.search { background-color: #1a140c; border: 1px solid #8a6d35; color: #f1e3c0; padding: 8px 12px; margin-top: 6px; font-size: 13px; }
+
+.creation { max-height: 92%; overflow-y: scroll; }
+.options { flex-direction: column; margin: 4px 0; }
+.option { flex-direction: row; align-items: center; margin: 2px 0; }
+.option .label { width: 220px; flex-grow: 0; color: #d9c08a; font-size: 13px; }
+.option .arrow { width: 36px; flex-grow: 0; flex-shrink: 0; justify-content: center; padding: 4px 0; color: #f1e3c0; cursor: pointer; background-color: #2a2012; border: 1px solid #8a6d35; }
+.option .arrow:hover { background-color: #4a3818; }
+.option .value { width: 200px; flex-grow: 0; justify-content: center; text-align: center; color: #f1e3c0; font-size: 13px; }
+.quality2 { color: #1eff00; }
+.quality3 { color: #0070dd; }
+.quality4 { color: #a335ee; }
+.quality5 { color: #ff8000; }
+
+/* WoW Forever's character creation (sizes of the client's interface files, at 1080 lines). */
+.wow-create { position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: all; font-family: "Friz Quadrata TT"; color: #ffd100; }
+.wow-create .faction-column { position: absolute; top: 0; width: 168px; height: 794px; flex-direction: column; align-items: center; }
+.wow-create .faction-column.alliance { left: 3px; }
+.wow-create .faction-column.horde { left: 191px; }
+.wow-create .banner { position: absolute; left: 0; top: 0; width: 168px; height: 794px; background-size: 100% 100%; }
+.wow-create .logo { position: absolute; top: -10px; left: -8px; width: 184px; height: 200px; background-size: 100% 100%; }
+/* Font objects of the client's creation screen (Blizzard_CharacterCreate, Blizzard_Fonts_Shared): faction headers
+   GameFontNormalLarge2 in capitals, race names GameFontNormalMed2Outline, class names GameFontNormalMed2,
+   navigation buttons GameFontNormalOutline22 / GameFontHighlightOutline22. All Friz Quadrata; shadows are 1px black. */
+.wow-create .faction-name { position: absolute; top: 170px; left: 0; width: 168px; justify-content: center; font-size: 18px; text-transform: uppercase; text-shadow: 1px 1px 0 black; }
+.wow-create .race-list { position: absolute; top: 200px; left: 0; width: 168px; flex-direction: column; align-items: center; }
+.wow-create .race-button, .wow-create .class-button { position: relative; width: 79px; height: 79px; min-height: 79px; margin-bottom: 34px; flex-shrink: 0; flex-grow: 0; cursor: pointer; }
+.wow-create .class-button { width: 66px; height: 66px; min-height: 66px; margin: 12px 14px 30px 14px; }
+.wow-create .race-button .icon, .wow-create .class-button .icon { position: absolute; left: 0; top: 0; right: 0; bottom: 0; border-radius: 50%; background-size: 100% 100%; }
+.wow-create .race-button .ring { position: absolute; left: -4px; top: -4px; width: 86px; height: 86px; background-size: 100% 100%; }
+.wow-create .class-button .ring { position: absolute; left: -4px; top: -4px; width: 73px; height: 73px; background-size: 100% 100%; }
+.wow-create .glow { position: absolute; left: -18px; top: -18px; width: 116px; height: 116px; background-size: 100% 100%; opacity: 0; }
+.wow-create .class-button .glow { left: -18px; top: -18px; width: 103px; height: 103px; }
+.wow-create .checked .glow, .wow-create .race-button:hover .glow, .wow-create .class-button:hover .glow { opacity: 1; }
+.wow-create .race-name, .wow-create .class-name { position: absolute; top: 76px; left: -30px; right: -30px; justify-content: center; font-size: 14px; color: #ffd100; text-shadow: 1px 1px 0 black; }
+.wow-create .race-name { text-stroke-width: 2px; text-stroke-color: black; }
+.wow-create .class-name { top: 66px; }
+.wow-create .bronze { position: absolute; background-image: url("mount://wowforever/ui/atlas/heavybronze-frame-background-c60.vtex"); background-size: 512px 512px;
+    border: 3px solid #8a6a3a; box-shadow: 0 0 6px black; }
+.wow-create .body-types { top: 0; left: 50%; margin-left: -90px; min-width: 180px; height: 90px; flex-direction: row; justify-content: center; align-items: center; padding: 0 25px; }
+.wow-create .body-type { width: 64px; height: 64px; margin: 0 11px; background-size: 100% 100%; cursor: pointer; }
+.wow-create .classes { bottom: 0; left: 50%; margin-left: -450px; width: 900px; height: 140px; flex-direction: row; justify-content: center; align-items: flex-start; padding-top: 10px; }
+.wow-create .nav { position: absolute; bottom: 28px; width: 250px; height: 66px; background-size: 100% 100%; justify-content: center; align-items: center;
+    font-size: 22px; color: #ffc700; text-stroke-width: 2px; text-stroke-color: black; cursor: pointer; }
+.wow-create .nav:hover { color: white; }
+.wow-create .nav.back { left: 46px; }
+.wow-create .nav.forward { right: 46px; }
+.wow-create .small-buttons { top: 30px; left: 40px; flex-direction: row; padding: 8px; }
+.wow-create .small { width: 44px; height: 44px; margin: 0 4px; background-size: 100% 100%; cursor: pointer; }
+.wow-create .flip { transform: scaleX(-1); }
+.wow-create .name-frame { top: 0; left: 50%; margin-left: -200px; width: 400px; height: 70px; justify-content: center; align-items: center; }
+.wow-create .name-entry { width: 300px; font-size: 18px; color: white; text-shadow: 1px 1px 0 black; text-align: center; background-color: rgba(0, 0, 0, 0.5); padding: 6px; }
+.wow-create .customize { top: 137px; right: 0; width: 420px; bottom: 120px; flex-direction: column; padding: 20px 30px; }
+.wow-create .randomize { position: absolute; left: 12px; top: 12px; width: 40px; height: 40px; background-size: 100% 100%; cursor: pointer; }
+.wow-create .categories { flex-direction: row; justify-content: center; margin-bottom: 12px; flex-shrink: 0; }
+.wow-create .category { width: 58px; height: 59px; margin: 0 2px; background-size: 100% 100%; cursor: pointer; }
+/* Customization: option labels GameFontNormalLarge, chosen values GameFontHighlightMedium (inferred from the
+   shared customization templates). */
+.wow-create .option-label { font-size: 16px; color: #ffd100; text-shadow: 1px 1px 0 black; margin-top: 6px; flex-shrink: 0; }
+.wow-create .option-row { flex-direction: row; align-items: center; flex-shrink: 0; }
+.wow-create .arrow { width: 38px; height: 38px; background-size: 100% 100%; cursor: pointer; flex-shrink: 0; }
+.wow-create .dropdown { width: 260px; height: 50px; background-size: 100% 100%; justify-content: center; align-items: center; color: white; font-size: 14px; text-shadow: 1px 1px 0 black; flex-shrink: 0; }
+.wow-create .slots, .wow-create .results { flex-direction: column; overflow-y: scroll; flex-shrink: 1; }
+.wow-create .slots { max-height: 35%; }
+.wow-create .results { flex-grow: 1; }
+.wow-create .slot { color: white; font-size: 12px; text-shadow: 1px 1px 0 black; padding: 3px 6px; cursor: pointer; flex-shrink: 0; }
+.wow-create .slot:hover, .wow-create .slot.selected { background-color: rgba(255, 209, 0, 0.15); }
+.wow-create .search { background-color: rgba(0, 0, 0, 0.5); border: 1px solid #8a6a3a; color: #f1e3c0; padding: 6px; margin: 6px 0; font-size: 13px; }
+.wow-create .error { position: absolute; left: 50%; top: 80px; color: #ff6060; }
+
+.hidden { display: none; }

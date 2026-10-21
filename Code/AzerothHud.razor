@@ -1,0 +1,406 @@
+@using Sandbox
+@using Sandbox.UI
+@using System.Linq
+@inherits PanelComponent
+@namespace WoWForever
+
+<root>
+    @if (!Loading && Zones != null && Zones.Changed < 5 && !string.IsNullOrEmpty(Zones.Zone))
+    {
+        @* Zone banner, as the client shows it when entering a zone or subzone. *@
+        <div class="zone-banner" style="opacity: @(System.Math.Clamp(5 - (float)Zones.Changed, 0, 1).ToString(System.Globalization.CultureInfo.InvariantCulture));">
+            <div class="zone">@(string.IsNullOrEmpty(Zones.Area) ? Zones.Zone : Zones.Area)</div>
+            @if (!string.IsNullOrEmpty(Zones.Area)) { <div class="subzone">@Zones.Zone</div> }
+        </div>
+    }
+    @if (Loading && Flight?.MenuOpen != true)
+    {
+        @* The map's loading screen as WoW Forever draws it: the picture in its leather book (LoadingScreenSkin:
+           side panels, gold book end, stitched bottom band), the logo, and the progress bar in the band. Maps
+           without Forever's frame show their picture alone. Placement inferred from the frame's pictures. *@
+        var frame = Zones?.LoadingFrame;
+        <div class="arrival @(frame != null ? "framed" : Zones?.LoadingScreen != null ? "screen" : "")"
+             style="@(frame?.GetValueOrDefault("SideFill") is { } fill ? $"background-image: url({fill});" : Zones?.LoadingScreen != null && frame == null ? $"background-image: url({Zones.LoadingScreen});" : "")">
+            @if (frame != null)
+            {
+                <div class="book">
+                    <div class="side left" style="background-image: url(@frame.GetValueOrDefault("LeftBackground"));"></div>
+                    <div class="side right" style="background-image: url(@frame.GetValueOrDefault("RightBackground"));"></div>
+                    <div class="picture" style="background-image: url(@Zones.LoadingScreen);">
+                        <div class="bookend left" style="background-image: url(@frame.GetValueOrDefault("LeftBookEnd"));"></div>
+                        <div class="bookend right" style="background-image: url(@frame.GetValueOrDefault("LeftBookEnd"));"></div>
+                    </div>
+                </div>
+                <div class="band" style="background-image: url(@frame.GetValueOrDefault("BottomFill"));"></div>
+            }
+            @if (Zones?.LoadingLogo != null)
+            {
+                <div class="loading-logo" style="background-image: url(@Zones.LoadingLogo);"></div>
+            }
+            <div class="progress-area">
+                <div class="hint">@(World?.Warming == true ? $"Relief et horizon : {(int)(World.WarmupProgress * 100)} %" : Details?.Warming == true ? $"Décors : {Details.PendingPlacements} éléments restants" : "Préparation des collisions")</div>
+                <div class="bar"><div class="fill" style="width: @(LoadingPercent)%;"></div></div>
+            </div>
+        </div>
+    }
+    @if (Flight?.MenuOpen == true && Page == "creation")
+    {
+        @* WoW Forever's character creation, laid out from the client's own interface files (camelot
+           Blizzard_CharacterCreate / Blizzard_CharacterCustomize): factions and races on the left, body types at the
+           top, classes at the bottom, then the customization panel on the right. Every picture is an atlas piece
+           of the client served by the mount; the fonts are the client's. *@
+        <div class="wow-create">
+            @if (Step == "race")
+            {
+                @foreach (var faction in new[] { "alliance", "horde" })
+                {
+                    <div class="faction-column @faction">
+                        <div class="banner" style="background-image: url(@Atlas($"charactercreate-factionflag-{faction}"));"></div>
+                        <div class="logo" style="background-image: url(@Atlas($"charactercreate-icon-{faction}"));"></div>
+                        <div class="faction-name">@(faction == "alliance" ? WowStrings.Get("FACTION_ALLIANCE", "Alliance") : WowStrings.Get("FACTION_HORDE", "Horde"))</div>
+                        <div class="race-list">
+                        @foreach (var character in (Player?.Characters ?? new()).Where(c => (faction == "alliance") == Alliance.Contains(RaceOf(c.Path)) && c.Key.EndsWith("_male")))
+                        {
+                            var race = RaceOf(character.Path);
+                            <div class="race-button @(RaceOf(Player.PlayerModel) == race ? "checked" : "")" onclick=@(() => Pick(race, Sex))>
+                                <div class="glow" style="background-image: url(@Atlas("character-create-icon-selectedglow"));"></div>
+                                <div class="icon" style="background-image: url(@Atlas($"raceicon-{IconRace(race)}-{Sex}"));"></div>
+                                <div class="ring" style="background-image: url(@Atlas("character-create-icon-frame"));"></div>
+                                <div class="race-name">@RaceTitle(character.Title)</div>
+                            </div>
+                        }
+                        </div>
+                    </div>
+                }
+                <div class="bronze body-types">
+                    @foreach (var sex in new[] { "male", "female" })
+                    {
+                        <div class="body-type" onclick=@(() => Pick(RaceOf(Player.PlayerModel), sex))
+                             style="background-image: url(@Atlas(Sex == sex ? $"charactercreate-gendericon-{sex}-selected" : $"charactercreate-gendericon-{sex}"));"></div>
+                    }
+                </div>
+                <div class="bronze classes">
+                    @foreach (var cls in Appearance?.Info?.Classes ?? new())
+                    {
+                        <div class="class-button @(ClassId == cls.Id ? "checked" : "")" onclick=@(() => PickClass(cls))>
+                            <div class="glow" style="background-image: url(@Atlas("character-create-icon-selectedglow"));"></div>
+                            <div class="icon" style="background-image: url(@Atlas($"classicon-{cls.File}"));"></div>
+                            <div class="ring" style="background-image: url(@Atlas("character-create-icon-frame"));"></div>
+                            <div class="class-name">@cls.Name</div>
+                        </div>
+                    }
+                </div>
+                <div class="nav back" style="background-image: url(@Atlas("128-redbutton-up"));" onclick=@(() => { Creation?.Close(); Page = ""; Changed(); })>@WowStrings.Get("BACK", "Retour")</div>
+                <div class="nav forward" style="background-image: url(@Atlas("128-redbutton-up"));" onclick=@(() => { Step = "customize"; Changed(); })>@WowStrings.Get("CUSTOMIZE", "Apparence")</div>
+            }
+            else if (Appearance?.Info is { } info)
+            {
+                <div class="bronze small-buttons">
+                    <div class="small" style="background-image: url(@Atlas("charactercreate-customize-backbutton"));" onclick=@(() => Creation?.Turn(-30))></div>
+                    <div class="small flip" style="background-image: url(@Atlas("charactercreate-customize-backbutton"));" onclick=@(() => Creation?.Turn(30))></div>
+                </div>
+                <div class="bronze name-frame">
+                    <TextEntry class="name-entry" Value:bind=@CharacterName Placeholder=@WowStrings.Get("NAME", "Nom") />
+                </div>
+                <div class="bronze customize">
+                    <div class="randomize" style="background-image: url(@Atlas("128-redbutton-refresh"));" onclick=@Randomize></div>
+                    <div class="categories">
+                        @foreach (var category in info.Categories)
+                        {
+                            <div class="category" onclick=@(() => { Category = category.Id; Changed(); })
+                                 style="background-image: url(@Atlas(Category == category.Id ? category.IconSelected : category.Icon));"></div>
+                        }
+                        <div class="category" onclick=@(() => { Category = 0; Changed(); })
+                             style="background-image: url(@Atlas(Category == 0 ? "charactercreate-icon-customize-accessories-selected" : "charactercreate-icon-customize-accessories"));"></div>
+                    </div>
+                    @if (Category != 0)
+                    {
+                        @foreach (var option in info.Options.Where(o => o.Category == Category || info.Categories.All(c => c.Id != Category)))
+                        {
+                            var index = System.Math.Max(0, option.Choices.FindIndex(c => c.Id == Appearance.Choices.GetValueOrDefault(option.Id)));
+                            <div class="option-label">@option.Name</div>
+                            <div class="option-row">
+                                <div class="arrow" style="background-image: url(@Atlas("charactercreate-customize-backbutton"));" onclick=@(() => Cycle(option, -1))></div>
+                                <div class="dropdown" style="background-image: url(@Atlas("charactercreate-customize-dropdownbox"));">@(string.IsNullOrEmpty(option.Choices[index].Name) ? $"{index + 1}" : option.Choices[index].Name)</div>
+                                <div class="arrow flip" style="background-image: url(@Atlas("charactercreate-customize-backbutton"));" onclick=@(() => Cycle(option, 1))></div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        @* Equipment and transmogrification: not part of the client's screen, kept in its style. *@
+                        <div class="option-label">Équipement · @(WowItems.Loaded.Count) objets</div>
+                        <div class="slots">
+                            @foreach (var (slot, name) in Slots)
+                            {
+                                var worn = Player.Equipment.TryGetValue(slot, out var id) ? WowItems.Loaded.FirstOrDefault(i => i.Id == id)?.Name : null;
+                                <div class="slot @(Slot == slot ? "selected" : "")" onclick=@(() => { Slot = slot; Changed(); })>@WowStrings.Get(name.Tag, name.Fallback)@(worn != null ? $" · {worn}" : "")</div>
+                            }
+                        </div>
+                        <TextEntry class="search" Value:bind=@ItemQuery Placeholder=@WowStrings.Get("SEARCH", "Recherche") />
+                        <div class="results">
+                            <div class="slot" onclick=@(() => { Appearance.Equip(Slot, 0); Changed(); })>Retirer</div>
+                            @foreach (var item in ItemResults)
+                            {
+                                <div class="slot quality@(item.Quality)" onclick=@(() => { Appearance.Equip(Slot, item.Id); Changed(); })>@item.Name</div>
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="nav back" style="background-image: url(@Atlas("128-redbutton-up"));" onclick=@(() => { Step = "race"; Changed(); })>@WowStrings.Get("BACK", "Retour")</div>
+                <div class="nav forward" style="background-image: url(@Atlas("128-redbutton-up"));" onclick=@(() => { Creation?.Close(); Page = ""; Step = "race"; Flight.MenuOpen = false; Changed(); })>@WowStrings.Get("FINISH", "Terminer")</div>
+            }
+            @if (!string.IsNullOrEmpty(Creation?.LastError)) { <div class="error">@Creation.LastError</div> }
+        </div>
+    }
+    else if (Flight?.MenuOpen == true)
+    {
+        @* The explorer's own menu (F9): destinations, character, spells and mounts, one tab at a time. *@
+        <div class="veil">
+            <div class="atlas">
+                <div class="header">
+                    <div class="titles">
+                        <div class="brand">WORLD OF WARCRAFT FOREVER</div>
+                        <div class="heading">@(World?.Current?.Title ?? "Azeroth")</div>
+                    </div>
+                    <div class="close" onclick=@(() => Flight.MenuOpen = false)>✕</div>
+                </div>
+                <div class="body">
+                    <div class="tabs">
+                        @foreach (var (key, title) in Tabs)
+                        {
+                            <div class="tab @(Tab == key ? "selected" : "")" onclick=@(() => { Tab = key; Shown = 120; Changed(); })>@title</div>
+                        }
+                    </div>
+                    <div class="content">
+                        @if (Tab == "destinations")
+                        {
+                            <div class="section">Lieux</div>
+                            <div class="grid">
+                                @foreach (var place in WowStrings.Places)
+                                {
+                                    <div class="card" onclick=@(() => Visit(place.Map, place.X, place.Y, place.Z > 0 ? place.Z : 400))>@place.Title</div>
+                                }
+                            </div>
+                            <div class="section">Continents</div>
+                            <div class="grid">
+                                @foreach (var map in (World?.Catalog.Continents ?? new()).Where(m => m.Tiles.Count >= 100))
+                                {
+                                    <div class="card @(World.Current == map ? "selected" : "")" onclick=@(() => Select(map.Id))>
+                                        <div class="name">@map.Title</div>
+                                        <div class="caption">@($"{map.Tiles.Count} portions de terrain")</div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="section">Donjons et régions</div>
+                            <div class="grid">
+                                @foreach (var map in (World?.Catalog.Continents ?? new()).Where(m => m.Tiles.Count < 100).OrderBy(m => m.Title))
+                                {
+                                    <div class="card small @(World.Current == map ? "selected" : "")" onclick=@(() => Select(map.Id))>@map.Title</div>
+                                }
+                            </div>
+                        }
+                        else if (Tab == "character")
+                        {
+                            <div class="actions">
+                                <div class="button" onclick=@(() => { Page = "creation"; _ = WowItems.All; Creation?.Open(); Changed(); })>Créer mon personnage…</div>
+                                <div class="button @(Player?.Dead == true ? "selected" : "")" onclick=@(() => { Player?.SetDead(!Player.Dead); Changed(); })>@(Player?.Dead == true ? "Ressusciter" : "Passer en état mort (fantôme)")</div>
+                            </div>
+                            <div class="section">@(Player?.LoadingModel == true ? "Apparence · chargement…" : "Apparence")</div>
+                            <div class="grid">
+                                @foreach (var character in Player?.Characters ?? new())
+                                {
+                                    <div class="card small @(Player.PlayerModel == character.Path ? "selected" : "")" onclick=@(() => Player.SetModel(character.Path))>@character.Title</div>
+                                }
+                                <div class="card small @(Player?.PlayerModel == "models/citizen/citizen.vmdl" ? "selected" : "")" onclick=@(() => Player?.SetModel("models/citizen/citizen.vmdl"))>Personnage s&amp;box</div>
+                            </div>
+                        }
+                        else if (Tab == "spells")
+                        {
+                            <TextEntry class="search" Value:bind=@SpellQuery Placeholder=@WowStrings.Get("SEARCH", "Recherche") />
+                            <div class="section">@(Spells?.Casting != null ? $"Incantation · {Spells.Casting}" : $"{Spells?.Spells.Count ?? 0} sorts du client")</div>
+                            <div class="grid">
+                                @foreach (var spell in Spells?.Search(SpellQuery, Shown) ?? Enumerable.Empty<AzerothSpells.SpellEntry>())
+                                {
+                                    <div class="card small" onclick=@(() => { Spells.Cast(spell.Id); Flight.MenuOpen = false; })>@spell.Name</div>
+                                }
+                            </div>
+                            @if ((Spells?.Search(SpellQuery, Shown + 1).Count() ?? 0) > Shown)
+                            {
+                                <div class="button more" onclick=@(() => { Shown += 120; Changed(); })>Afficher plus</div>
+                            }
+                        }
+                        else if (Tab == "creatures")
+                        {
+                            @if (Creatures?.Selected is { } selected)
+                            {
+                                <div class="actions">
+                                    <div class="section">@($"{Creatures.SelectedName} · {Creatures.SummonedCount} invoqué(s)")</div>
+                                    <div class="button" onclick=@(() => { Creatures.Dismiss(false); Changed(); })>Renvoyer</div>
+                                    <div class="button" onclick=@(() => { Creatures.Dismiss(true); Changed(); })>Tout renvoyer</div>
+                                </div>
+                                <div class="section">Animations</div>
+                                <div class="grid">
+                                    @foreach (var clip in selected.Model?.AnimationNames ?? Enumerable.Empty<string>())
+                                    {
+                                        <div class="card tiny @(Creatures.SelectedClip == clip ? "selected" : "")" onclick=@(() => { Creatures.Play(clip); Changed(); })>@clip</div>
+                                    }
+                                </div>
+                            }
+                            <TextEntry class="search" Value:bind=@CreatureQuery Placeholder=@WowStrings.Get("SEARCH", "Recherche") />
+                            <div class="section">@(Beasts is null ? "Chargement du bestiaire…" : $"{Beasts.Count} monstres et PNJ")</div>
+                            <div class="grid">
+                                @foreach (var beast in BeastResults)
+                                {
+                                    <div class="card small" onclick=@(() => { _ = Creatures?.Summon(beast); Changed(); })>
+                                        <div class="name">@beast.Name</div>
+                                        <div class="caption">@(string.IsNullOrEmpty(beast.Title) ? $"Niveau {beast.Level}" : $"<{beast.Title}> · niveau {beast.Level}")</div>
+                                    </div>
+                                }
+                            </div>
+                            @if (BeastMatches.Skip(Shown).Any())
+                            {
+                                <div class="button more" onclick=@(() => { Shown += 120; Changed(); })>Afficher plus</div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="grid">
+                                <div class="card small @(Player?.MountPath == null ? "selected" : "")" onclick=@(() => Player?.SetMount(null))>À pied</div>
+                                @foreach (var display in (Player?.Mounts ?? new()).Where(m => !string.IsNullOrEmpty(m.Name)).SelectMany(m => m.Displays).DistinctBy(d => d.Path))
+                                {
+                                    <div class="card small @(Player.MountPath == display.Path ? "selected" : "")" onclick=@(() => Player.SetMount(display.Path, display.Scale))>@(MountNames.GetValueOrDefault(display.Path) ?? MountTitle(display.Path))</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+                @foreach (var error in new[] { World?.LastError, Details?.LastError, Player?.LastError }.Where(e => !string.IsNullOrEmpty(e)))
+                {
+                    <div class="error">@error</div>
+                }
+                <div class="footer">
+                    <div class="button" onclick=@(() => Player?.ToggleMode())>@(Player?.WantsWalking == true ? "Passer en vol libre" : "Passer en marche")</div>
+                    <div class="controls">@((Player?.Walking == true ? "ZQSD courir · Maj marcher · Espace sauter · Ctrl s’accroupir" : "ZQSD voler · Espace / Ctrl monter / descendre") + " · R vue · F9 menu")</div>
+                </div>
+            </div>
+        </div>
+    }
+</root>
+
+@code {
+    private AzerothWorld world;
+    private AzerothFlight flight;
+    private AzerothDetails details;
+    private AzerothPlayer player;
+    private AzerothWorld World => world.IsValid() ? world : world = Scene.GetAllComponents<AzerothWorld>().FirstOrDefault();
+    private AzerothFlight Flight => flight.IsValid() ? flight : flight = Scene.GetAllComponents<AzerothFlight>().FirstOrDefault();
+    private AzerothDetails Details => details.IsValid() ? details : details = Scene.GetAllComponents<AzerothDetails>().FirstOrDefault();
+    private AzerothPlayer Player => player.IsValid() ? player : player = Scene.GetAllComponents<AzerothPlayer>().FirstOrDefault();
+    private bool Loading => World?.Warming == true || Details?.Warming == true || (Player?.WantsWalking == true && Details?.CollisionsReady != true);
+    private void Select(string id) { World.SelectContinent(id); Flight.MenuOpen = false; }
+    private void Visit(string id, float x, float y, float z) { World.SelectContinent(id); World.Teleport(new Vector3(x,y,z)); Flight.MenuOpen = false; }
+    // creatures/horse/horse_229: the client's model name and display id (the mount table's names are not read here).
+    private AzerothSpells Spells => spells.IsValid() ? spells : spells = Scene.GetAllComponents<AzerothSpells>().FirstOrDefault();
+    private AzerothSpells spells;
+    public string SpellQuery { get; set; } = "";
+    private AzerothZones Zones => zones.IsValid() ? zones : zones = Scene.GetAllComponents<AzerothZones>().FirstOrDefault();
+    private AzerothZones zones;
+    private System.Collections.Generic.Dictionary<string, string> MountNames => (Player?.Mounts ?? new()).Where(m => !string.IsNullOrEmpty(m.Name)).SelectMany(m => m.Displays.Select(d => (d.Path, m.Name))).GroupBy(x => x.Path).ToDictionary(g => g.Key, g => g.First().Name);
+    private int LoadingPercent => World?.Warming == true ? (int)(World.WarmupProgress * 70) : Details?.Warming == true ? 70 + (int)(25 * (1 - System.Math.Min(1, (Details.PendingPlacements) / 400f))) : 97;
+    private static string MountTitle(string path) => System.IO.Path.GetFileNameWithoutExtension(path).Replace("_", " ");
+    // Character creation: page, selected equipment slot and item search.
+    public string Page { get; set; } = "";
+    public int Slot { get; set; } = 1;
+    public string ItemQuery { get; set; } = "";
+    private int edits;
+    private void Changed() => edits++;
+    private WowAppearance Appearance => Creation?.Preview ?? Player?.Appearance;
+    // Creation steps as in the client: race and class, then customization.
+    public string Step { get; set; } = "race";
+    public uint Category { get; set; } = 1;
+    public string CharacterName { get; set; } = "";
+    public uint ClassId { get; set; }
+    // Atlas pieces of the client, served by the mount; Forever's own variants (-c60) first.
+    private static System.Collections.Generic.HashSet<string> atlasNames;
+    private static System.Threading.Tasks.Task atlasLoad;
+    private string Atlas(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "";
+        if (atlasNames is null) atlasLoad ??= LoadAtlases();
+        name = name.ToLowerInvariant();
+        string chosen = atlasNames?.Contains(name + "-c60") == true ? name + "-c60" : name;
+        return $"mount://wowforever/ui/atlas/{chosen}.vtex";
+    }
+    private async System.Threading.Tasks.Task LoadAtlases()
+    {
+        var prefab = await MountLoads.Prefab("mount://wowforever/ui/atlases.prefab");
+        var json = prefab?.GetMetadata("WowData");
+        atlasNames = json is null ? new() : System.Text.Json.JsonDocument.Parse(json).RootElement.EnumerateObject().Select(p => p.Name).ToHashSet();
+        Changed();
+    }
+    // The client names the Forsaken's icons "undead".
+    private static string IconRace(string race) => race == "scourge" ? "undead" : race;
+    // A class dresses the character in its starting outfit from the client (CharStartOutfit).
+    private void PickClass(WowCharacterInfo.ClassChoice cls)
+    {
+        ClassId = cls.Id;
+        Player.Equipment.Clear();
+        foreach (var id in cls.Items)
+            if (WowItems.Loaded.FirstOrDefault(i => i.Id == id) is { } item && !Player.Equipment.ContainsKey(WowItems.SlotOf(item.Slot)))
+                Player.Equipment[WowItems.SlotOf(item.Slot)] = id;
+        _ = Appearance?.Apply(); Player.Save(); Changed();
+    }
+    private AzerothCreation Creation => creation.IsValid() ? creation : creation = Scene.GetAllComponents<AzerothCreation>().FirstOrDefault();
+    private AzerothCreation creation;
+    private static readonly string[] Alliance = { "human", "dwarf", "nightelf", "gnome", "draenei" };
+    private static string RaceOf(string path) => System.IO.Path.GetFileNameWithoutExtension(path ?? "").Split('_')[0];
+    private string Sex => System.IO.Path.GetFileNameWithoutExtension(Player?.PlayerModel ?? "").EndsWith("_female") ? "female" : "male";
+    private static string RaceTitle(string title) => title.Split('·')[0].Trim();
+    // The race and sex buttons pick the matching playable model; the screen rebuilds around it.
+    private void Pick(string race, string sex)
+    {
+        var target = Player?.Characters.FirstOrDefault(c => c.Key == $"{race}_{sex}");
+        if (target is null) return;
+        Player.SetModel(target.Path); Creation?.Refresh(); Changed();
+    }
+    private void Randomize()
+    {
+        if (Appearance?.Info is not { } info || info.Options.Count == 0) return;
+        foreach (var option in info.Options) Appearance.Choices[option.Id] = option.Choices[System.Random.Shared.Next(option.Choices.Count)].Id;
+        Appearance.Choose(info.Options[0].Id, Appearance.Choices[info.Options[0].Id]);
+        Changed();
+    }
+    // Equipment slots, named by the client's own strings (HEADSLOT...).
+    private static readonly (int Slot, (string Tag, string Fallback) Name)[] Slots =
+    {
+        (1, ("HEADSLOT", "Tête")), (3, ("SHOULDERSLOT", "Épaules")), (16, ("BACKSLOT", "Dos")), (5, ("CHESTSLOT", "Torse")), (4, ("SHIRTSLOT", "Chemise")),
+        (19, ("TABARDSLOT", "Tabard")), (9, ("WRISTSLOT", "Poignets")), (10, ("HANDSSLOT", "Mains")), (6, ("WAISTSLOT", "Taille")), (7, ("LEGSSLOT", "Jambes")),
+        (8, ("FEETSLOT", "Pieds")), (21, ("MAINHANDSLOT", "Main droite")), (22, ("SECONDARYHANDSLOT", "Main gauche")), (15, ("RANGEDSLOT", "À distance")),
+    };
+    // Tabs of the explorer's menu.
+    public string Tab { get; set; } = "destinations";
+    private static readonly (string Key, string Title)[] Tabs =
+        { ("destinations", "Destinations"), ("character", "Personnage"), ("creatures", "Créatures"), ("spells", "Sorts"), ("mounts", "Montures") };
+    // Sandbox lists: how many cards are shown (more on demand), the bestiary and its search.
+    public int Shown { get; set; } = 120;
+    public string CreatureQuery { get; set; } = "";
+    private AzerothCreatures Creatures => creatures.IsValid() ? creatures : creatures = Scene.GetAllComponents<AzerothCreatures>().FirstOrDefault();
+    private AzerothCreatures creatures;
+    private System.Collections.Generic.List<AzerothCreatures.SpawnInfo> Beasts => AzerothCreatures.Bestiary is { IsCompletedSuccessfully: true } done ? done.Result : null;
+    private System.Collections.Generic.IEnumerable<AzerothCreatures.SpawnInfo> BeastMatches => (Beasts ?? new())
+        .Where(b => string.IsNullOrWhiteSpace(CreatureQuery) || b.Name.Contains(CreatureQuery.Trim(), System.StringComparison.OrdinalIgnoreCase));
+    private System.Collections.Generic.IEnumerable<AzerothCreatures.SpawnInfo> BeastResults => BeastMatches.Take(Shown);
+    private System.Collections.Generic.IEnumerable<WowItems.Entry> ItemResults => WowItems.Loaded
+        .Where(i => WowItems.SlotOf(i.Slot) == Slot && !i.Name.StartsWith("Monster -") && (string.IsNullOrWhiteSpace(ItemQuery) || i.Name.Contains(ItemQuery.Trim(), System.StringComparison.OrdinalIgnoreCase)))
+        .OrderByDescending(i => i.Quality).ThenBy(i => i.Name).Take(40);
+    private void Cycle(WowCharacterInfo.Option option, int step)
+    {
+        int index = option.Choices.FindIndex(c => c.Id == Appearance.Choices.GetValueOrDefault(option.Id));
+        index = ((index < 0 ? 0 : index) + step + option.Choices.Count) % option.Choices.Count;
+        Appearance.Choose(option.Id, option.Choices[index].Id);
+        Changed();
+    }
+
+    protected override int BuildHash() => System.HashCode.Combine(System.HashCode.Combine(World?.Current?.Id, World?.LoadedTiles, World?.LastError, Loading, Details?.Warming, Details?.PendingPlacements / 50, Player?.Characters.Count, Player?.LoadingModel), Flight?.MenuOpen, Flight?.ThirdPerson, Details?.LastError, Player?.Walking, Player?.WantsWalking, Player?.LastError, System.HashCode.Combine(Player?.PlayerModel, Player?.MountPath, Player?.Riding, Player?.Mounts.Count, Zones?.Zone, Zones?.Area, Zones != null && Zones.Changed < 6 ? (int)(Zones.Changed * 10) : -1, System.HashCode.Combine(Zones?.LoadingScreen, Zones?.LoadingFrame, SpellQuery, Spells?.Spells.Count, Spells?.Casting, System.HashCode.Combine(Page, edits, ItemQuery, Appearance?.Info, WowItems.Loaded.Count, Creation?.Preview, Creation?.LastError, System.HashCode.Combine(Step, Category, CharacterName, atlasNames?.Count, WowStrings.Revision, Tab, System.HashCode.Combine(Shown, CreatureQuery, Beasts?.Count, Creatures?.Selected, Creatures?.SummonedCount))))));
+}

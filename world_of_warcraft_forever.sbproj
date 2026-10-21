@@ -1,0 +1,33 @@
+{
+  "Title": "World of Warcraft Forever",
+  "Type": "game",
+  "Org": "local",
+  "Ident": "world_of_warcraft_forever",
+  "Schema": 1,
+  "IncludeSourceFiles": false,
+  "Resources": "scenes/exploration.scene_c",
+  "PackageReferences": [],
+  "EditorReferences": null,
+  "Mounts": [
+    "wowforever"
+  ],
+  "IsStandaloneOnly": false,
+  "AI": {
+    "EnableMcpCommunication": true
+  },
+  "Metadata": {
+    "MaxPlayers": 64,
+    "MinPlayers": 1,
+    "TickRate": 50,
+    "GameNetworkType": "Multiplayer",
+    "MapSelect": "Unrestricted",
+    "MapList": [
+      "facepunch.flatgrass"
+    ],
+    "RankType": "None",
+    "PerMapRanking": false,
+    "LeaderboardType": "None",
+    "CsProjName": "",
+    "StartupScene": "scenes/exploration.scene"
+  }
+}
